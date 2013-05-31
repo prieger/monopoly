@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs,umonopoly, StdCtrls,ScktComp;
+  Dialogs,umonopoly, StdCtrls,ScktComp,unetzwerk;
 
 type
   TForm1 = class(TForm)
@@ -14,12 +14,17 @@ type
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
+    ServerSocket1: TServerSocket;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Edit1KeyPress(Sender: TObject; var Key: Char);
+    procedure ServerSocket1ClientRead(Sender: TObject;
+      Socket: TCustomWinSocket);
+    procedure ServerSocket1Accept(Sender: TObject;
+      Socket: TCustomWinSocket);
   private
     { Private declarations }
   public
@@ -44,12 +49,10 @@ end;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
-var server:tserversocket;
 begin
 monop:=tmonopoly.create;
-server:=tserversocket.Create(form1);
-server.Port:=1337;
-monop.setserversocket(server);
+monop.setserversocket(ServerSocket1);
+self.ServerSocket1.Active:=true;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -125,6 +128,21 @@ if s='read brett' then
 
 end;
 end;
+end;
+
+procedure TForm1.ServerSocket1ClientRead(Sender: TObject;
+  Socket: TCustomWinSocket);
+var s:STRing;
+  begin
+s:=socket.ReceiveText;
+Unetzwerk.ServerAction(Socket,form1,copy(s, 1, 4), copy(s, 5, (length(s)-4)),monop);
+end;
+
+procedure TForm1.ServerSocket1Accept(Sender: TObject;
+  Socket: TCustomWinSocket);
+begin
+if (monop.Spiellaeuft) then socket.Close
+else socket.sendtext('aktiv');
 end;
 
 end.

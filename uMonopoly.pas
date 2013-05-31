@@ -66,6 +66,7 @@ private
   //Geld was jeder Spieler beim Überqueren vom Losfeld erhält
   property preis_freikauf:integer read frei_Geld;
   //Kaution für das Gefängnis
+  property Spiellaeuft:boolean read Spielgestartet;
   procedure akts_freiparken;
   //Gibt den Geldbetrag in der Mitte an die Clients weiter
   procedure ziehe_EReignisskarte;

@@ -63,4 +63,13 @@ object Form1: TForm1
     Left = 16
     Top = 24
   end
+  object ServerSocket1: TServerSocket
+    Active = True
+    Port = 1337
+    ServerType = stNonBlocking
+    OnAccept = ServerSocket1Accept
+    OnClientRead = ServerSocket1ClientRead
+    Left = 32
+    Top = 80
+  end
 end
