@@ -1,0 +1,129 @@
+unit Unit1;
+
+interface
+
+uses
+  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Dialogs, StdCtrls, ScktComp, uNetzwerk, uKommunikation, uMonopoly, uClient,
+  uVirtualAnimation,uguivecht;
+
+type
+  TForm1 = class(TForm)
+    Edit1: TEdit;
+    Button1: TButton;
+    Label1: TLabel;
+    ClientSocket1: TClientSocket;
+    Label2: TLabel;
+    Label3: TLabel;
+    Edit2: TEdit;
+    Button2: TButton;
+    ChatMemo: TMemo;
+    Edit3: TEdit;
+    Button3: TButton;
+    procedure Button1Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure ClientSocket1Read(Sender: TObject; Socket: TCustomWinSocket);
+    procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form1: TForm1;
+  client : TClient;
+  Monopoly : Tmonopoly;
+  Spieler : TClientSP;
+  vgui : tguivecht;
+
+implementation
+
+{$R *.dfm}
+
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+if edit1.Text <> '' then
+  begin
+  Client.SetIP(edit1.text);
+  //form1.Button2.Click;
+  end;
+
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+
+if ParamStr(1) <> '' then
+  begin
+  edit1.Text := ParamStr(1);
+  button1.Click;
+  end;
+
+  
+Client := TClient.create(ClientSocket1);
+Chatmemo.clear;
+vgui := tguivecht.Create;
+Spieler := TClientSP.create(tVirtualAnimation(vgui));
+
+
+
+end;
+
+procedure TForm1.ClientSocket1Read(Sender: TObject;
+  Socket: TCustomWinSocket);
+  var hilfe : string;
+  i:integeR;
+  action,payl:String;
+  begin
+hilfe := Socket.ReceiveText;
+if hilfe = 'aktiv' then
+  begin
+    Button1.enabled := false;
+    Edit1.enabled := false;
+    button2.visible := true;
+    label3.Visible := true;
+    edit2.Visible := true;
+    Label2.Caption := 'Status: verbunden, nicht angemeldet';
+    end
+else while hilfe <>'' do
+Begin
+action:='';
+payl:='';
+for i:=0 to 3 do
+  Begin
+  action:=action+hilfe[1];
+  delete(hilfe,1,1);
+  end;
+while (hilfe<>'') and (hilfe[1]<>'|') do
+  Begin
+  payl:=payl+hilfe[1];
+  delete(hilfe,1,1);
+  end;
+ClientAction(Form1, action, payl, Spieler);
+delete(hilfe,1,1);
+end;
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+if Edit2.Text <> '' then
+  begin
+  edit2.Enabled := false;
+  button2.Enabled := false;
+  Client.SendToServer('name', Edit2.Text);
+  Label2.Caption := 'Status: verbunden und angemeldet';
+  chatmemo.Visible := true;
+  button3.Visible := true;
+  edit3.Visible := true;
+  end;
+
+end;
+
+procedure TForm1.Button3Click(Sender: TObject);
+begin
+Client.SendToServer('chat', edit3.text);
+end;
+
+end.

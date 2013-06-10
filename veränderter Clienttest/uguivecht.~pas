@@ -1,0 +1,123 @@
+unit tguivecht;
+
+interface
+
+type tguivecht=class(tvirtuellgui)
+procedure wuerfel(wurf1,wurf2:integer); 
+//Auschließliches Ausgeben der Würfelergebnisse (nicht mehr!)
+Procedure geldakt(id:integer);
+//Geldanzeige des Spielers mit dem Index id soll aktualisiert werden
+procedure spielerposi(id:integer); virtual;abstract;
+(* Position des Spielers mit dem Index id soll aktualisiert werden; ohne
+   Animation; der Spieler soll "teleportiert" werden *)
+procedure besitzakt(id:integer); 
+//Feld mit dem Index id soll aktualisiert werden
+procedure gefaegniswahl(Kartenerlaubt:boolean); 
+(*Spieler soll Entscheiden, was er tun will um aus dem Gefängnis zu entkommen
+Kartenerlaubt gibt an, ob er eine "Du kommst aus dem Gefängnisfrei" Karte
+einsetzen darf*)
+procedure kaufen; 
+//Spieler soll entscheiden, ob er die aktuelle Straße von der Bank kaufen möchte
+procedure Nachricht(Text:String);  
+//Der String Text soll als Nachricht ausgegeben werden
+procedure freihandeln;       
+(*Spieler soll Möglichkeit bekommen ob er die Grundstücke verwalten will,
+Handeln oder seinen Zug beenden möchte*)
+procedure gefaengnis(Kartenerlaubt:boolean); 
+(*Spieler soll Entscheiden, was er tun will um aus dem Gefängnis zu entkommen.
+Er kann nicht mehr würfeln!
+Kartenerlaubt gibt an, ob er eine "Du kommst aus dem Gefängnisfrei" Karte
+einsetzen darf*)
+procedure Kontoausgleichen; 
+(*Spieler soll Konto ausgleichen. Dafür brauch er die Optionen zum Verwalten der
+Grundstücke, zum Handeln und aufgeben*)
+{procedure Handelabgelehnt; 
+(*Der Handel, den der Spieler dieser Instanz vorgeschlagen hat, wurde abgelehnt.
+Dies sollte dem Spieler mitgeteilt werden bzw. die Anzeige, dass der andere noch
+Überlegt sollte verschwinden*)  }
+Procedure Handelsvorschlag(a:tangebot); 
+(* Dem Spieler wird der Handel a vorgeschlagen.*)
+procedure Spielerreaktion(angenommen:boolean);  
+(* Die Reaktion des Mitspielers auf den Handel, bei wahr wurde er angenommen.
+Es muss lediglich die Reaktion dem Spieler mitgeteilt werden, nicht mehr! *)
+procedure Aufgegeben(id:integer); 
+(* Der Spieler id hat aufgegeben, dies sollte gekennzeichnet werden.*)
+function strassen:String; 
+(*Spieler soll die Datei mit den Strassen auswählen welche verwendet werden
+ soll. Die Funktion soll den Pfad zur ausgewählten Datei zurückgeben. Wird nur
+ im Constructor von Tclientsp benutzt.*)
+procedure Bitte_Wuerfeln; 
+//Spieler soll Möglichkeit zum Würfeln erhalten
+procedure freiparkengeld_akt; 
+(*Es soll das Frei Parken Geld (Variable: Frei_parken) aktualisiert werden *)
+procedure ende; 
+(* Der Server hat das Spiel beendet. Der Spieler darf nur noch Aktionen
+   ausführen, welche lokal begrenzt sind (also keinen Netzwerkverkehr mehr
+   auslösen*)
+procedure ziehen(id,anzahl:integer); 
+(* Der Spieler Id soll anzahl Felder ziehen. Wenn Anzahl negativ ist, soll
+   der Spieler Rückwärts ziehen *)
+
+ end;
+
+
+implementation
+
+procedure tguivecht.wuerfel(wurf1,wurf2:integer); Begin  end;
+//Auschließliches Ausgeben der Würfelergebnisse (nicht mehr!)
+Procedure tguivecht.geldakt(id:integer); Begin  end;
+//Geldanzeige des Spielers mit dem Index id soll aktualisiert werden
+procedure tguivecht.spielerposi(id:integer); virtual;abstract;
+(* Position des Spielers mit dem Index id soll aktualisiert werden; ohne
+   Animation; der Spieler soll "teleportiert" werden *)
+procedure tguivecht.besitzakt(id:integer); Begin  end;
+//Feld mit dem Index id soll aktualisiert werden
+procedure tguivecht.gefaegniswahl(Kartenerlaubt:boolean); Begin  end;
+(*Spieler soll Entscheiden, was er tun will um aus dem Gefängnis zu entkommen
+Kartenerlaubt gibt an, ob er eine "Du kommst aus dem Gefängnisfrei" Karte
+einsetzen darf*)
+procedure tguivecht.kaufen; Begin  end;
+//Spieler soll entscheiden, ob er die aktuelle Straße von der Bank kaufen möchte
+procedure tguivecht.Nachricht(Text:String);  Begin  end;
+//Der String Text soll als Nachricht ausgegeben werden
+procedure tguivecht.freihandeln;       Begin  end;
+(*Spieler soll Möglichkeit bekommen ob er die Grundstücke verwalten will,
+Handeln oder seinen Zug beenden möchte*)
+procedure tguivecht.gefaengnis(Kartenerlaubt:boolean); Begin  end;
+(*Spieler soll Entscheiden, was er tun will um aus dem Gefängnis zu entkommen.
+Er kann nicht mehr würfeln!
+Kartenerlaubt gibt an, ob er eine "Du kommst aus dem Gefängnisfrei" Karte
+einsetzen darf*)
+procedure tguivecht.Kontoausgleichen; Begin  end;
+(*Spieler soll Konto ausgleichen. Dafür brauch er die Optionen zum Verwalten der
+Grundstücke, zum Handeln und aufgeben*)
+{procedure tguivecht.Handelabgelehnt; Begin  end;
+(*Der Handel, den der Spieler dieser Instanz vorgeschlagen hat, wurde abgelehnt.
+Dies sollte dem Spieler mitgeteilt werden bzw. die Anzeige, dass der andere noch
+Überlegt sollte verschwinden*)  }
+Procedure tguivecht.Handelsvorschlag(a:tangebot); Begin  end;
+(* Dem Spieler wird der Handel a vorgeschlagen.*)
+procedure tguivecht.Spielerreaktion(angenommen:boolean);  Begin  end;
+(* Die Reaktion des Mitspielers auf den Handel, bei wahr wurde er angenommen.
+Es muss lediglich die Reaktion dem Spieler mitgeteilt werden, nicht mehr! *)
+procedure tguivecht.Aufgegeben(id:integer); Begin  end;
+(* Der Spieler id hat aufgegeben, dies sollte gekennzeichnet werden.*)
+function tguivecht.strassen:String; Begin  end;
+(*Spieler soll die Datei mit den Strassen auswählen welche verwendet werden
+ soll. Die Funktion soll den Pfad zur ausgewählten Datei zurückgeben. Wird nur
+ im Constructor von Tclientsp benutzt.*)
+procedure tguivecht.Bitte_Wuerfeln; Begin  end;
+//Spieler soll Möglichkeit zum Würfeln erhalten
+procedure tguivecht.freiparkengeld_akt; Begin  end;
+(*Es soll das Frei Parken Geld (Variable: Frei_parken) aktualisiert werden *)
+procedure tguivecht.ende; Begin  end;
+(* Der Server hat das Spiel beendet. Der Spieler darf nur noch Aktionen
+   ausführen, welche lokal begrenzt sind (also keinen Netzwerkverkehr mehr
+   auslösen*)
+procedure tguivecht.ziehen(id,anzahl:integer); Begin  end;
+(* Der Spieler Id soll anzahl Felder ziehen. Wenn Anzahl negativ ist, soll
+   der Spieler Rückwärts ziehen *)
+
+
+end.
+ 

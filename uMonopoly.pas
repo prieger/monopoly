@@ -66,6 +66,7 @@ private
   //Geld was jeder Spieler beim Überqueren vom Losfeld erhält
   property preis_freikauf:integer read frei_Geld;
   //Kaution für das Gefängnis
+  property Spiellaeuft:boolean read Spielgestartet;
   procedure akts_freiparken;
   //Gibt den Geldbetrag in der Mitte an die Clients weiter
   procedure ziehe_EReignisskarte;
@@ -269,8 +270,8 @@ if (Spieler[aktspieler].AnzGefWuerfe<3) and (eint=2) then zuggef
 else if not eint=2 then self.gefzahlen(eint=3)
 else
 Begin
-netz.SendToClient(aktspieler,'mesg','Ungültige Aktion!');
-netz.SendToClient(aktspieler,'gekg',booltostr(Spieler[aktspieler].AnzGefKarten>0));
+netz.SendToClient(aktspieler,'mesg','Ungültige Aktion!'+'|');
+netz.SendToClient(aktspieler,'gekg',booltostr(Spieler[aktspieler].AnzGefKarten>0)+'|');
 end;
 end;
 
@@ -389,7 +390,7 @@ end;
 
 procedure tmonopoly.akts_freiparken;
 Begin
-netz.SendToAllClients('geld',inttostr(self.Spieleranzahl));
+netz.SendToAllClients('geld',inttostr(self.Spieleranzahl)+'|');
 end;
 
 destructor tmonopoly.destroy;
@@ -403,8 +404,8 @@ for i:=0 to spieleranzahl-1 do
 Begin
 Spieler[i].Destroy;
 end;
-netz.SendToAllClients('mesg','Der Host hat das Spiel beendet.');
-netz.SendToAllClients('ende','');
+netz.SendToAllClients('mesg','Der Host hat das Spiel beendet.'+'|');
+netz.SendToAllClients('ende',''+'|');
 netz.Destroy;
 if ang<>nil then ang.Destroy;
 ereignis.Destroy;
@@ -460,7 +461,7 @@ NAchricht:string;
 Begin
 Nachricht:='Der Spieler '+Spieler[id].Name+' hat aufgegeben.'+#13+' Seine';
 NAchricht:=Nachricht+' Besitztümer gehen zurück an die Bank';
-netz.SendToAllClients('mesg',Nachricht);
+netz.SendToAllClients('mesg',Nachricht+'|');
 player:=Spieler[id];
 for i:=0 to Spieler[id].BesitzAnzahl-1 do
 Begin
@@ -476,13 +477,13 @@ for i:=0 to player.AnzGefKarten do self.gef_frei_karte_reinschieben;
 player.Destroy;
 setlength(Spieler, spieleranzahl-1);
 dec(spieleranzahl);
-Netz.SendToAllClients('aufe',inttostr(id));
+Netz.SendToAllClients('aufe',inttostr(id)+'|');
 Kontoplus;//weiter gehts mit dem Prüfen, ob die Konten ausgeglichen sind.
 end;
 
 procedure tmonopoly.akts_Besitz(id:integer);
 Begin
-if Felder[id].Typ=1 then netz.SendToAllClients('besi',inttostr(id)+';'+inttostr(TBesitz(Felder[id]).Besitzer)+';'+inttostr(TBesitz(Felder[id]).Zustand));
+if Felder[id].Typ=1 then netz.SendToAllClients('besi',inttostr(id)+';'+inttostr(TBesitz(Felder[id]).Besitzer)+';'+inttostr(TBesitz(Felder[id]).Zustand)+'|');
 end;
 
 procedure tmonopoly.Felderaktualisieren;
@@ -511,7 +512,7 @@ end;
 
 procedure tmonopoly.Nachricht_an_alle_spieler(Text:string);
 Begin
-netz.sendtoallclients('mesg',Text);
+netz.sendtoallclients('mesg',Text+'|');
 end;
 
 
@@ -730,11 +731,14 @@ netz:=tserver.create(socket);
 end;
 
 procedure TMonopoly.spieleranmelden(ip,name:string;port:Integer);
+var i:integer;
 Begin
         if not Spielgestartet then
         Begin
+        netz.SendToAllClients('spin',inttostr(spieleranzahl)+';'+inttostr(spieleranzahl)+';'+name+'|');
         setlength(Spieler,Spieleranzahl+1);
         Spieler[Spieleranzahl]:=Tspieler.create(self,(spieleranzahl),ip,name,port,maxstr);
+        for i:=0 to spieleranzahl-1 do netz.SendToClient(spieleranzahl,'spin',inttostr(self.Spieleranzahl)+';'+inttostr(i)+';'+Spieler[i].Name+'|');
         inc(Spieleranzahl);
         end;
 end;
@@ -748,11 +752,10 @@ Begin
  for i:=0 to spieleranzahl-1 do
  Begin
  spieler[i].Geld:=Startgeld;
- netz.SendToClient(i,'spid',inttostr(i));
- netz.SendToAllClients('spin',inttostr(spieleranzahl)+';'+inttostr(i)+';'+Spieler[i].Name);
+ netz.SendToClient(i,'spid',inttostr(i)+'|');
  end;
 aktspieler:=-1;
-netz.sendtoallclients('star','');
+netz.sendtoallclients('star',''+'|');
 self.nextspieler;
 end;
 
@@ -760,8 +763,8 @@ procedure TMonopoly.nextspieler;
 begin
 pasch:=0;
 aktspieler:=(aktspieler+1) mod spieleranzahl;
-IF NOT Spieler[aktspieler].Gefangen THEN netz.SendToClient(aktspieler,'btnc','')
-ELSE netz.SendToClient(aktspieler,'gefg',BoolToStr(Spieler[aktspieler].AnzGefKarten>0));
+IF NOT Spieler[aktspieler].Gefangen THEN netz.SendToClient(aktspieler,'btnc',''+'|')
+ELSE netz.SendToClient(aktspieler,'gefg',BoolToStr(Spieler[aktspieler].AnzGefKarten>0)+'|');
 
 
 
@@ -783,8 +786,8 @@ BEGIN
    if not Spieler[aktspieler].gefangen then zug
    else
    Begin
-   netz.Sendtoclient(aktspieler,'mesg','Ungültige Aktion');
-   netz.SendToClient(aktspieler,'gefg',BooltoStr(Spieler[aktspieler].AnzGefKarten>0))
+   netz.Sendtoclient(aktspieler,'mesg','Ungültige Aktion'+'|');
+   netz.SendToClient(aktspieler,'gefg',BooltoStr(Spieler[aktspieler].AnzGefKarten>0)+'|')
    end;
 END;
 
@@ -798,11 +801,11 @@ a2:=wuerfeln;
 Augenzahl:=a1+a2;
 IF a1=a2 THEN INC(pasch)
 Else pasch:=0;
-netz.SendToAllClients('wurf',inttostr(a1)+';'+inttostr(a2));//Mitteilung des würfelergebnisses
+netz.SendToAllClients('wurf',inttostr(a1)+';'+inttostr(a2)+'|');//Mitteilung des würfelergebnisses
 IF pasch=3 Then
   begin
-  netz.SendToAllClients('mesg','Dritter Pasch, der Spieler '+Spieler[aktspieler].Name+' wurde eingesperrt!');
-  netz.SendToAllClients('gefa',inttostr(aktspieler)+';'+Booltostr(true));
+  netz.SendToAllClients('mesg','Dritter Pasch, der Spieler '+Spieler[aktspieler].Name+' wurde eingesperrt!'+'|');
+  netz.SendToAllClients('gefa',inttostr(aktspieler)+';'+Booltostr(true)+'|');
    Spieler[aktspieler].Feld:=gef;
    Spieler[aktspieler].Gefangen:=true;
    Pasch:=0;
@@ -827,7 +830,7 @@ Begin
              Spieler[aktspieler].gefangen:=false;
              ziehen(a1+a2); // zug
            end
-           else if Spieler[aktspieler].anzgefwuerfe>2 then netz.SendToClient(aktspieler,'gekg','');
+           else if Spieler[aktspieler].anzgefwuerfe>2 then netz.SendToClient(aktspieler,'gekg',''+'|');
 end;
 
 procedure TMonopoly.auf_Feld;
@@ -840,11 +843,11 @@ BEGIN
 CASE Felder[Spieler[aktspieler].Feld].typ  of
 1: BEGIN
 Besitz:=TBesitz(Felder[Spieler[aktspieler].Feld]);
-IF Besitz.Besitzer<0 THEN netz.SendToClient(aktspieler,'hndl','')
+IF Besitz.Besitzer<0 THEN netz.SendToClient(aktspieler,'hndl',''+'|')
 ELSE IF Besitz.Besitzer<>aktspieler THEN
 Begin
   Miete:=Besitz.getmiete(augenzahl);
-  netz.SendtoallClients('mesg',Spieler[aktspieler].name+' muss '+inttostr(Miete)+' an '+Spieler[Tbesitz(Felder[Spieler[aktspieler].Feld]).besitzer].Name+' zahlen.');
+  netz.SendtoallClients('mesg',Spieler[aktspieler].name+' muss '+inttostr(Miete)+' an '+Spieler[Tbesitz(Felder[Spieler[aktspieler].Feld]).besitzer].Name+' zahlen.'+'|');
   Spieler[Besitz.Besitzer].geld:=Spieler[Besitz.Besitzer].geld+miete;
   Spieler[aktspieler].geld:=Spieler[aktspieler].geld-miete;
 END;
@@ -858,7 +861,7 @@ END;
 3:
   Begin
 Karte:=TSonderfeld(Felder[Spieler[aktspieler].Feld]).warteschlange.karteziehen;
-netz.SendToAllClients('mesg',karte.Text);
+netz.SendToAllClients('mesg',karte.Text+'|');
 Karte.Inhalt(Tobject(self));
 //Zieht oberste Karte
 end;
@@ -874,7 +877,7 @@ else if ecke.Eckentyp=2 then
   end
 else if ecke.Eckentyp=3 then
   Begin
-  netz.SendToAllClients('gefa',inttostr(aktspieler)+';'+Booltostr(true));
+  netz.SendToAllClients('gefa',inttostr(aktspieler)+';'+Booltostr(true)+'|');
   Spieler[aktspieler].Feld:=gef;
   Spieler[aktspieler].Gefangen:=true;
   Pasch:=0;
@@ -907,7 +910,7 @@ Besitz:=Tbesitz(Felder[Spieler[aktspieler].Feld]);
     INC(Spieler[aktspieler].besitzanzahl);
     Spieler[aktspieler].besitz[SPieler[aktspieler].BesitzAnzahl-1]:=besitz;
     Spieler[aktspieler].geld:=Spieler[aktspieler].geld-besitz.Preis;
-    netz.SendToAllClients('besi',inttostr(besitz.ID)+';'+inttostr(aktspieler)+';0');
+    netz.SendToAllClients('besi',inttostr(besitz.ID)+';'+inttostr(aktspieler)+';0'+'|');
   END;
   END;
 self.konten_ausgleichen;
@@ -917,7 +920,7 @@ END;
 procedure TMonopoly.chan(Angebot:string);
 BEGIN
 ang:=tangebot.create(angebot);
-netz.SendToClient(ang.sempf,'shan',angebot);
+netz.SendToClient(ang.sempf,'shan',angebot+'|');
 END;
 
 
@@ -968,7 +971,7 @@ else
       end;
     end;
   end;
-if (besitz<>nil) then netz.SendToallclients('besi',inttostr(Besitz.id)+';'+inttostr(besitz.Besitzer)+inttostr(besitz.Zustand));
+if (besitz<>nil) then netz.SendToallclients('besi',inttostr(Besitz.id)+';'+inttostr(besitz.Besitzer)+inttostr(besitz.Zustand)+'|');
 self.konten_ausgleichen;
 END;
 
@@ -1005,7 +1008,7 @@ BEGIN
 raus(ang.Strassengeben[i],send.BesitzAnzahl,send.Besitz);
 bes:=TBesitz(Felder[ang.Strassengeben[i]]);
 empf.Besitz[empf.BesitzAnzahl]:=bes;
-netz.SendToAllClients('besi',inttostR(bes.ID)+';'+inttostr(bes.Besitzer)+';'+inttostr(bes.Zustand));
+netz.SendToAllClients('besi',inttostR(bes.ID)+';'+inttostr(bes.Besitzer)+';'+inttostr(bes.Zustand)+'|');
 inc(empf.BesitzAnzahl);
 dec(send.BesitzAnzahl);
 END;
@@ -1014,20 +1017,20 @@ BEGIN
 raus(ang.Strassennehmen[i],empf.BesitzAnzahl,empf.Besitz);
 bes:=TBesitz(Felder[ang.Strassengeben[i]]);
 send.Besitz[send.BesitzAnzahl]:=bes;
-netz.SendToAllClients('besi',inttostR(bes.ID)+';'+inttostr(bes.Besitzer)+';'+inttostr(bes.Zustand));
+netz.SendToAllClients('besi',inttostR(bes.ID)+';'+inttostr(bes.Besitzer)+';'+inttostr(bes.Zustand)+'|');
 inc(send.BesitzAnzahl);
 dec(empf.BesitzAnzahl);
 END;
 ang.Destroy;
 ang:=nil;
-END else if ang<>nil then netz.SendToClient(ang.ssender,'hars',booltostR(false));
+END else if ang<>nil then netz.SendToClient(ang.ssender,'hars',booltostR(false)+'|');
 self.konten_ausgleichen;
 END;
 
 
 procedure tMonopoly.aktion;
 Begin
-netz.sendtoclient(aktspieler,'fhnd','');
+netz.sendtoclient(aktspieler,'fhnd',''+'|');
 end;
 
 procedure tmonopoly.konten_ausgleichen;
@@ -1062,7 +1065,7 @@ end
 else
 Begin
 aktspieler:=i-1;
-netz.sendtoclient(aktspieler,'koau','');
+netz.sendtoclient(aktspieler,'koau',''+'|');
 end;
 end;
 

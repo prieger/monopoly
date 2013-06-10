@@ -77,17 +77,19 @@ procedure will_handeln(a:tangebot);
   procedure besi(FID, SID, zustand : cardinal);
   procedure szug(SID,anz : integer);
   procedure gefg(e : boolean);
-//  procedure hndl(h : string);
+  procedure hndl;
   procedure btnc;
-//  procedure koau(k : string);
+  procedure koau;
   procedure kost(SID, geld : cardinal);
   procedure fhnd;
   procedure gekg(k : boolean);
   procedure spid(SID : string);
   procedure hars(r : boolean);
   procedure aufe(id:integer);
+  procedure spin(gesamtzahl,spielerid:integer;spielername:string);
   procedure ende;
-  procedure chan(s:string);
+  procedure shan(s:string);
+  procedure star;
 
 private
 PROCEDURE FeldEintragAuswerten(zeile:String;ID:integer);
@@ -97,12 +99,17 @@ end;
 
 implementation
 
+procedure tclientsp.star;
+Begin
+self.gui.Start;
+end;
+
 procedure tclientsp.will_handeln(a:tangebot);
 Begin
 netz.SendToServer('chan',a.toString);
 end;
 
-procedure tclientsp.chan(s:string);
+procedure tclientsp.shan(s:string);
 Begin
 gui.Handelsvorschlag(tangebot.create(s));
 end;
@@ -216,6 +223,20 @@ setlength(Spieler, spieleranzahl-1);
 dec(spieleranzahl);
 end;
 
+procedure tclientsp.spin(gesamtzahl,spielerid:integer;spielername:string);
+Begin
+if spielerid>=spieleranzahl then
+Begin
+setlength(spieler,spielerid+1);
+end;
+if spieler[spielerid]=nil then spieler[spielerid]:=tspielerdaten.create(id,'',spielername,1337,maxstr)
+else
+Begin
+spieler[spielerid].Name:=spielername;
+end;
+self.Spieleranzahl:=gesamtzahl;
+end;
+
 procedure tclientsp.aufgabe;
 Begin
 netz.SendToServer('aufg',inttostr(self.id));
@@ -280,10 +301,20 @@ begin
 gui.gefaegniswahl(e);
 end;
 
+procedure tclientsp.hndl;
+Begin
+gui.kaufen;
+end;
+
 procedure tclientsp.btnc;
 begin
 //[GUI] Würfelbutton verfügbar machen. Client mitteilen, dass er würfeln soll/kann/darf/muss
 gui.bitte_Wuerfeln;
+end;
+
+procedure tclientsp.koau;
+Begin
+gui.Kontoausgleichen;
 end;
 
 procedure tclientsp.kost(SID, geld : cardinal);

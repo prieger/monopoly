@@ -1,0 +1,700 @@
+unit UMonopoly;
+
+interface
+
+uses   UFeld, SysUtils, uereignis;
+type TAngebot = class
+  Strassengeben:Array of integer;
+  Strassennehmen:Array of integer;
+  anzG:integer;
+  anzN:integer;
+  GefKarten:Integer;
+  Geld: integer; //Angebot des Aufrufenden
+  sempf:integer;
+  ssender:integer;
+  constructor create;
+end;
+
+type TMonopoly = Class
+  Felder : array of TFeld ; 
+  //Los hat den Index 0
+  Spieleranzahl : integer;
+  AktSpieler :integer ;
+  Spieler: array of Tspieler;
+  Gef:integer;
+  los:integer;
+  gehgef:integer;
+  frei:integer;
+  frei_parken: Integer; 
+  // Geld in der Mitte
+  function wuerfeln:integer;
+  procedure spieleranmelden(ip,name:string;port:Integer);   
+  // kreieren eines teilnehmenden Spielers
+  procedure spielstart;
+  procedure nextspieler;
+  procedure ziehen(augen:integer);
+  procedure zuggef;
+  procedure zug;
+  constructor create;
+  procedure gefzahlen(karte:boolean);
+  procedure auf_Feld;
+  procedure kaufen;
+  procedure aktion;
+  //Spieler kann danach interagieren(handeln, bauen etc.)
+  procedure handeln(Angebot:TAngebot);
+  procedure handelreaktion(antwort:boolean);
+  procedure bauen(id:integer;aufbau:boolean);
+  procedure kontenueberpfruefen;
+  //procedure FeldTypBestimmen;
+
+
+(*
+!!!!!
+!!!!!
+!!!!! fehlende oder neue proceduren entweder schreiben oder ausklammern/-kommentieren zum Testen
+!!!!!
+!!!!!
+*)  
+  
+  
+  
+  
+//Netzwerkproceduren
+(*Serveraction*)
+  procedure name (n, ip : string; port : cardinal); 
+  procedure kauf;
+  procedure hypo (SID : string);
+  //procedure baue (SID : cardinal; bau : boolean);
+  procedure geza (e : string);
+//e:string ??? wird nicht 1,2 oder 3 übergeben? oder ist es einfach mit nem string als mit nem cardinal(integer?)
+  procedure wuer;
+  //procedure aufg (SID : string);
+//mal wird Straßen-ID als string mal als cardinal übergeben; Selbiges bei Spieler-ID  
+  procedure hare (r : boolean);
+{procedure gefh (h : string);}
+(*Clientaction*)
+  procedure wurf(wrfl1, wrfl2 : cardinal);
+  procedure spos(pos, SID : cardinal);
+  procedure gefa(SID : cardinal; gefangen : boolean);
+  procedure geld(SID, geld : cardinal);
+  procedure besi(FID, SID, zustand : cardinal);
+  procedure gefg(e : boolean);
+  //procedure hndl(h : string);
+//string als Parameter wofür?
+  //procedure fhnd;
+  //procedure gekg(k : boolean);
+  //procedure spid(SID : string);
+  procedure btnc; 
+  //procedure koau(k : string);
+  //procedure hars(e : boolean);
+  procedure aufe (SID : string); //Typenangabe, auf die sich beim obrigen Kommentar geeinigt wurde für Spieler-ID);
+//  procedure spin (gA : cardinal; fehlende Parameter entsprechend der Klärung (Nominalstil^^) des Kommentars zu action = 'spin' anpassen);
+  procedure spin (gAnzahl, SID :cardinal; name : string);
+  procedure ende;
+  procedure szug (SID, z : cardinal);
+  {procedure zugs(SID : string); <--- wurde entfernt
+   procedure erei(msg : string); <--- wurde entfernt
+   procedure kost(SID, geld : cardinal);}
+//Ende der Netzwerkproceduren   
+   
+  end;
+
+var
+  Augenzahl:integer;
+  maxstr:integer;
+  startgeld:integer;
+  pasch:integer;
+  preis_freikauf:integer;
+  losgeld:integer;
+  ang:Tangebot;
+
+implementation
+
+{
+!!!
+!!! Proceduren die in der Deklaration mit // ausgeklammert sind, sind hier durch '(**)' ausgeklammert und Ausklammerungen in geschweiften Klammern bleiben so....
+!!!
+}
+
+
+//Netzwerkproceduren
+(*Serveraction*)
+
+procedure TMonopoly.name(n, ip : string; port : cardinal);
+begin
+spieleranmelden(ip, n, port);
+end;
+
+procedure TMonopoly.kauf;
+begin
+kaufen;
+end;
+
+procedure TMonopoly.hypo (SID : string);
+ var 
+  i : cardinal;
+ begin
+  i := 0;
+  repeat inc(i)
+  until Felder[i].id = strtoint(SID);
+  if Felder[i].Typ = 1 then
+  if TBesitz(Felder[i]).Typ2 = 1 then
+  if TStrasse(TBesitz(Felder[i])).zustand = -1 then TStrasse(TBesitz(Felder[i])).zustand := 0
+  else if TStrasse(TBesitz(Felder[i])).zustand = 0 then TStrasse(TBesitz(Felder[i])).zustand := -1;
+  // else Server.SendToClient(aktspieler, 'mesg', 'Erst Häuser auf dieser Straße verkaufen!');
+end;
+
+(*
+procedure TMonopoly.baue (SID : cardinal; bau : boolean);
+begin
+end;
+*)
+
+procedure TMonopoly.geza (e : string);
+ begin
+  case strtoint(e) of
+  1: gefzahlen(false);      //bezahlen
+  2: zuggef;                //auf pasch hoffen
+  3: gefzahlen(true);       //mit karte freikommen
+  end;
+ end;
+
+procedure TMonopoly.wuer;
+ begin
+  zug;
+ end;
+
+(*
+procedure TMonopoly.aufg (SID : string);
+ begin
+ end;
+*)
+ 
+procedure TMonopoly.hare (r : boolean);
+ begin
+ end;
+ 
+{procedure TMonopoly.gefh (h : string);}
+
+
+(*Clientaction*)
+ 
+procedure TMonopoly.wurf(wrfl1, wrfl2 : cardinal);
+ begin
+  //[GUI] Anzeige der Wurfergenbisse.
+ end;
+
+procedure TMonopoly.spos(pos, SID : cardinal);
+ begin
+  //[GUI] Anzeige der Spielerposition.
+ end;
+
+procedure TMonopoly.gefa(SID : cardinal; gefangen : boolean);
+ begin
+  //[GUI] Anzeige des Zustandes des Spielers ob gefangen oder frei........
+ end;
+
+procedure TMonopoly.geld(SID, geld : cardinal);
+ begin
+  //[GUI] Anzeige des Geldstandes.
+ end;
+
+procedure TMonopoly.besi(FID, SID, zustand : cardinal);
+ begin
+ //[GUI] Anzeige des Besitzers des Feldes.
+ end;
+
+procedure TMonopoly.gefg(e : boolean);
+ begin
+ //[GUI] Anzeige der Wahlmöglichkeiten
+ end;  
+ 
+(*
+procedure TMonopoly.hndl (h : string);
+ begin
+ end; 
+*)
+
+(* 
+procedure TMonopoly.fhnd;
+ begin
+ end;
+*)
+
+(* 
+procedure TMonopoly.gekg (k :boolean);
+ begin
+ end;
+*)
+
+(* 
+procedure TMonopoly.spid (SID : string);
+ begin
+ end;
+*)
+ 
+procedure TMonopoly.btnc;
+ begin
+ //[GUI] Würfelbutton verfügbar machen. Client mitteilen, dass er würfeln soll/kann/darf/muss
+ end;
+
+(* 
+procedure TMonopoly.koau (k : string);
+ begin
+ end;
+ *)
+
+(* 
+procedure TMonopoly.hars (e : boolean);
+ begin
+ end;
+*) 
+ 
+procedure Tmonopoly.aufe (SID : string);
+ begin
+ end;
+
+procedure Tmonopoly.spin (gAnzahl, SID :cardinal; name : string);
+ begin
+ end;
+
+procedure TMonopoly.ende;
+ begin
+ end;
+ 
+procedure TMonopoly.szug (SID, z : cardinal);
+ begin
+ end; 
+
+{procedure TMonopoly.zugs(SID : string); <--- wurde entfernt
+ begin
+ //[GUI] Anzeige des aktuellen Spielers
+ end;
+ 
+ procedure TMonopoly.erei(msg : string); <--- wurde entfernt
+  begin
+  //[GUI] Anzeige des Ereignistextes(msg)
+ end;
+  end;
+  
+ procedure TMonopoly.kost(SID, geld : cardinal);
+  begin
+  end;  
+  }
+// Ende der Netzwerkproceduren
+
+
+constructor tmonopoly.create;
+begin
+Spieleranzahl:=0;
+end;
+function TMonopoly.wuerfeln:integer;
+begin
+   result:=random(6)+1;
+end;
+
+procedure TMonopoly.spieleranmelden(ip,name:string;port:Integer);
+begin
+        setlength(Spieler,Spieleranzahl+1);
+        Spieler[Spieleranzahl]:=Tspieler.create(ip,name,port,maxstr);
+        inc(Spieleranzahl);
+end;
+
+procedure tmonopoly.spielstart;
+var
+i:integer;
+begin
+
+ for i:=0 to spieleranzahl-1 do spieler[i].Geld:=Startgeld;
+aktspieler:=0;
+end;
+
+procedure TMonopoly.nextspieler;
+begin
+pasch:=0;
+aktspieler:=(aktspieler+1) mod spieleranzahl;
+IF NOT Spieler[aktspieler].Gefangen THEN //Nachricht bitte würfeln dann zug
+ELSE  //client mitteilen dass spieler entscheiden soll
+
+
+
+end;
+
+procedure TMonopoly.gefzahlen(karte:boolean);
+BEGIN
+   IF (karte) AND(Spieler[aktspieler].AnzGefKarten>0) THEN
+   BEGIN
+      DEC(Spieler[aktspieler].AnzGefKarten);
+      Spieler[aktspieler].gefangen:=false;
+   end
+   ELSE IF (NOT karte) AND (Spieler[aktspieler].geld>preis_freikauf) THEN
+   BEGIN
+      DEC(Spieler[aktspieler].geld,preis_freikauf);
+      Spieler[aktspieler].gefangen:=false;
+   END;
+   if not Spieler[aktspieler].gefangen then zug
+   else
+   Begin
+   //Nachricht: "Ungültige Aktion"
+   //client mitteilen dass spieler entscheiden soll
+   end;
+END;
+
+
+
+procedure TMonopoly.zug;
+var a1,a2:integer;
+Begin
+a1:=wuerfeln;
+a2:=wuerfeln;
+Augenzahl:=a1+a2;
+IF a1=a2 THEN INC(pasch)
+Else pasch:=0;
+IF pasch=3 Then
+  begin
+  //Mitteilung an client dass er im knast sitzt
+  //Mitteilung an cliet (bzw. GUI) dass Spielerposition grt wurde
+   Spieler[aktspieler].Feld:=gef;
+   Spieler[aktspieler].Gefangen:=true;
+   Pasch:=0;
+   //Mitteilung an Client dass er Handeln kann
+  end
+ELSE
+Begin
+//Mitteilung des würfelergebnisses
+ziehen(a1+a2);
+end;
+end;
+
+procedure TMonopoly.zuggef;
+var  a1,a2: integer;
+Begin
+
+           a1:=wuerfeln;
+           a2:=wuerfeln;
+           Augenzahl:=a1+a2;
+           INC(Spieler[aktspieler].anzgefwuerfe);
+           IF a1=a2 THEN
+           Begin
+             Spieler[aktspieler].gefangen:=false;
+             ziehen(a1+a2); // zug einfügen
+           end;
+end;
+
+procedure TMonopoly.auf_Feld;
+VAR  Besitz:TBesitz;
+     Steuer:TSteuerfeld;
+     ereignis:tereignis;
+miete:integer;
+BEGIN
+miete:=0;
+{CASE Felder[Spieler[aktspieler].Feld].typ  of
+1: BEGIN
+Besitz:=TBesitz(Felder[Spieler[aktspieler].Feld]);
+IF Besitz.Besitzer=NIL THEN // kauf anbieten
+ELSE IF Besitz.Besitzer<>Spieler[aktspieler] THEN
+Begin
+  //Message an Spieler
+  Miete:=Besitz.getmiete(augenzahl);
+  INC(Besitz.Besitzer.geld,miete);
+  DEC(Spieler[aktspieler].geld,miete);
+END;
+END;
+2: BEGIN
+Steuer:=TSTeuerFeld(Felder[Spieler[aktspieler].Feld]);
+INC(frei_Parken,Steuer.Steuer);
+DEC(Spieler[aktspieler].geld,steuer.Steuer);
+END;
+3: TSonderfeld(Felder[Spieler[aktspieler].Feld]).warteschlange.inhalt;
+//Zieht oberste Karte
+END;}
+END;
+
+procedure TMonopoly.ziehen(augen:integer);
+var i:integer;
+Begin
+        IF augen>0 THEN
+        For i:=0 to augen DO  //zugvor um augen
+        Begin
+        //anweisung ans GUI und clients
+        INC(Spieler[aktspieler].feld);
+        IF Spieler[aktspieler].feld>=maxstr THEN
+        Begin
+        Spieler[aktspieler].feld:=0;
+        inc(Spieler[aktspieler].geld,Losgeld);
+        end;
+        end
+
+        ELSE IF augen<0 THEN //zugzurück um augen
+        For i:=0 to augen DO
+        Begin
+        //anweisung ans GUI und clients
+        DEC(Spieler[aktspieler].feld);
+        IF Spieler[aktspieler].feld<0 THEN Spieler[aktspieler].feld:=maxstr-1;
+        end;
+        auf_Feld;
+end;
+
+procedure TMonopoly.kaufen;
+Var Besitz: TBesitz;
+BEGIN
+IF Felder[Spieler[aktspieler].Feld].typ=1 THEN
+Begin
+Besitz:=Tbesitz(Felder[Spieler[aktspieler].Feld]);
+  {IF besitz.Besitzer=NIL THEN
+  BEGIN
+  IF Spieler[aktspieler].geld>=Besitz.preis THEN
+  BEGIN
+    Besitz.Besitzer:=Spieler[aktspieler];
+    INC(Spieler[aktspieler].besitzanzahl);
+    Spieler[aktspieler].besitz[SPieler[aktspieler].BesitzAnzahl-1]:=besitz;
+    DEC(Spieler[aktspieler].geld,besitz.preis);
+  END;
+  END;}
+aktion;
+END;
+END;
+
+procedure TMonopoly.handeln(Angebot:TAngebot);
+BEGIN
+ang:=Angebot;
+//ANgebot an Empfänger schicken
+END;
+
+procedure Tmonopoly.bauen(id:integer;aufbau:boolean);
+var gid,i:integer;//globale id, Id im Felder Array
+    all:boolean;
+    besitz:Tbesitz;
+    strasse:Tstrasse;
+BEGIN
+all:=true; //true bedeutet er hat alle
+for i:=0 to maxstr do
+Begin
+if Felder[i].typ=1 then
+Begin
+Besitz:=Tbesitz(Felder[i]);
+{if (Besitz.Typ2=1) and (Besitz.Besitzer<>Spieler[aktspieler]) then
+  Begin
+  if TStrasse(Spieler[aktspieler].Besitz[id]).Farbe=TStrasse(Besitz).Farbe then all:=false;
+  end;}
+end;
+end;
+Strasse:=TStrasse(Spieler[aktspieler].Besitz[id]);
+if (all) then
+Begin
+if aufbau then
+Begin
+if (Strasse.Zustand<5) and (Spieler[aktSpieler].Geld>=Strasse.Baukosten) then
+Begin
+dec(Spieler[aktSpieler].Geld,Strasse.Baukosten);
+inc(Strasse.Zustand);
+end;
+end;
+end
+else
+Begin
+if not aufbau then
+Begin
+if (Strasse.Zustand>0) then
+Begin
+inc(Spieler[aktSpieler].Geld,Strasse.Baukosten);
+dec(Strasse.Zustand);
+end;
+if Strasse.Zustand=0 then
+Begin
+inc(Spieler[aktSpieler].Geld,Strasse.Hypothek);
+dec(Strasse.Zustand);
+end;
+end;
+end;
+END;
+
+procedure Tmonopoly.handelreaktion(antwort:boolean);
+VAR i:integer;
+var send,empf:Tspieler;
+procedure raus(id,max:integer;ar:Array of tBesitz);
+var ind,i2:integer;//id:Feld id der zu entfernenden Straße
+//ind Position im Besitzarray des Spielers der Straße
+//i2 Schleifenvariable
+Begin
+for i2:=0 to max do
+Begin
+if ar[i2].ID=id then ind:=i2;
+end;
+for ind:=ind to max do
+Begin
+if ind<max then ar[ind]:=ar[ind+1]
+else ar[ind]:=nil;
+end;
+end;
+BEGIN
+IF antwort and (ang<>nil) THEN
+BEGIN
+Spieler[ang.sempf].geld:=Spieler[ang.sempf].geld+ang.geld;
+Spieler[ang.ssender].geld:=Spieler[ang.ssender].geld-ang.geld;
+Spieler[ang.sempf].AnzGefKarten:=Spieler[ang.sempf].AnzGefKarten+ang.GefKarten;
+Spieler[ang.ssender].AnzGefKarten:=Spieler[ang.ssender].AnzGefKarten-ang.GefKarten;
+send:=Spieler[ang.ssender];
+empf:=Spieler[ang.sempf];
+For i:=0 to ang.anzG-1 DO
+BEGIN
+raus(ang.Strassengeben[i],send.BesitzAnzahl,send.Besitz);
+empf.Besitz[empf.BesitzAnzahl]:=TBesitz(Felder[ang.Strassengeben[i]]);
+inc(empf.BesitzAnzahl);
+dec(send.BesitzAnzahl);
+END;
+For i:=0 to ang.anzN-1 DO
+BEGIN
+raus(ang.Strassennehmen[i],empf.BesitzAnzahl,empf.Besitz);
+send.Besitz[send.BesitzAnzahl]:=TBesitz(Felder[ang.Strassengeben[i]]);
+inc(send.BesitzAnzahl);
+dec(empf.BesitzAnzahl);
+END;
+ang.Destroy;
+ang:=nil;
+END;
+END;
+
+constructor TAngebot.create;
+BEGIN
+setlength(strassengeben,0);
+setlength(strassennehmen,0);
+anzG:=0;
+anzN:=0;
+GefKarten:=0;
+Geld:=0;
+sempf:=0;
+ssender:=0;
+
+END;
+
+procedure tMonopoly.aktion;
+Begin
+//Mitteilung an Client, dass Spieler agieren darf
+end;
+
+(*procedure TMonopoly.FeldTypBestimmen;
+//ruft jeweiligen Feldconstructor in UFeld auf
+var
+s1,s2,s3,nam : string;    //nam:Name
+ID,n,fa,anz,pre,m1,m2,m3,m4,m5,m6,bau,hyp,Steu,Typ : integer;  //fa:"Farbe"(gleiche Zahlen gehören zusammen), anz:Anzahl, pre:Preis , m1-m5 Mieten, bau:Baukosten, hyp:Hypothek
+begin
+  s2.Delimiter := ';';
+  s2.StrictDelimiter := True;
+  s1.LoadFromFile('Felder.csv');
+  ID:=0;
+  try
+  for n:=0 to ID+1 do
+  begin
+    s2.DelimitedText := sl[ID]; //id-te Zeile
+    s3 := s2[0]; //1.Spalte
+    if s3:='St' do     //Straße
+    begin
+      s3 := s2[1];
+      fa:=strtoint(s3);
+      s3 := s2[2];
+      anz:=strtoint(s3);
+      s3 := s2[3];
+      nam:=s3;
+      s3 := s2[4];
+      pre:=strtoint(s3);
+      s3 := s2[5];
+      m1:=strtoint(s3);
+      s3 := s2[6];
+      m2:=strtoint(s3);
+      s3 := s2[7];
+      m3:=strtoint(s3);
+      s3 := s2[8];
+      m4:=strtoint(s3);
+      s3 := s2[9];
+      m5:=strtoint(s3);
+      s3 := s2[10];
+      m6:=strtoint(s3);
+      s3 := s2[11];
+      bau:=strtoint(s3);
+      s3 := s2[12];
+      hyp:=strtoint(s3);
+      UFeld.TStrasse.create(id,fa,anz,nam,pre,m1,m2,m3,m4,m5,m6,bau,hyp);
+    end
+    else
+      if s3:='We' do   //Werke
+      begin
+        s3 := s2[1];
+        nam:=s3;
+        s3 := s2[2];
+        pre:=strtoint(s3);
+        s3 := s2[3];
+        m1:=strtoint(s3);
+        s3 := s2[4];
+        m2:=strtoint(s3);
+        s3 := s2[5];
+        hyp:=strtoint(s3);
+        UFeld.TWerk.create(id,nam,pre,m1,m2,hyp);
+      end
+      else
+        if s3:='Ba' do  //Bahnhof
+        begin
+          s3 := s2[1];
+          nam:=s3;
+          s3 := s2[2];
+          pre:=strtoint(s3);
+          s3 := s2[3];
+          m1:=strtoint(s3);
+          s3 := s2[4];
+          m2:=strtoint(s3);
+          s3 := s2[5];
+          m3:=strtoint(s3);
+          s3 := s2[6];
+          m4:=strtoint(s3);
+          s3 := s2[7];
+          hyp:=strtoint(s3);
+          UFeld.TBahnhof.create(id,nam,pre,m1,m2,m3,m4,hyp);
+        end
+        else
+          if s3:='Ec' do  //Ecke
+          begin
+             s3 := s2[1];
+             id:=strtoint(s3);
+			 s3 := s2[2];
+             nam:=s3;
+			 s3 := s2[3];
+             typid:=strtoint(s3);
+             UFeld.TEcke.create(id,nam,typid);
+          end;
+          else
+            if s3:='Steu' do  //Steuerfeld
+            begin
+             s3 := s2[1];
+             id:=strtoint(s3);
+			 s3 := s2[2];
+             nam:=strtoint(s3);
+             s3 := s2[3];
+             st:=strtoint(s3);
+			 UFeld.TSteuerfeld.create(id,nam,st);
+            end
+            else  //Sonderfeld (Ereignisfeld,Gemeinschaftsfeld)
+              begin
+                s3 := s2[1];
+                id:=strtoint(s3);
+				s3 := s2[2];
+                nam:=s3;
+				s3 := s2[3];
+                typid:=strtoint(s3);
+                UFeld.TSonderfeld.create(id,nam,typid);
+              end;
+    INC(ID);
+    finally
+  end;
+end; *)
+
+procedure TMonopoly.kontenueberpfruefen;
+var i:integer;
+BEGIN
+For i:=0 to spieleranzahl-1 do
+Begin
+//if Spieler[i].Geld<0 then 
+
+end;
+END;
+
+end.

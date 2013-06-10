@@ -1,0 +1,89 @@
+unit uangebot;
+
+interface
+
+uses SysUtils;
+
+type
+TAngebot = class
+	  //Arrays
+	Strassengeben:Array of integer;
+	Strassennehmen:Array of integer;
+
+
+	anzG:integer; //Anzahl an Straﬂen die ssender, also derjenige, der das Angebot macht gibt
+  	anzN:integer; //Anzahl an Straﬂen die sempf, also derjenige, der das Angebot bekommt gibt
+
+	//Anzahl an du kommst aus dem Gef‰ngnis frei karten, die der Empf‰nger bekommt
+	//wenn der Angebotsmacher Karten erh‰llt ist diese Zahl negativ
+	GefKarten:Integer;
+	Geld: integer; //Geld, dass der Empf‰nger bekommt wenn der Angebotsmacher Geld erh‰llt ist diese Zahl negativ
+
+	sempf:integer; //id desjenigen, an den sich das Angebot richtet
+	ssender:integer; //id des Spielers, der das Angebot gemacht hat
+
+	function toString : string;
+
+	constructor create; overload;
+	constructor create(from : string); overload;
+
+end;
+
+implementation
+
+{
+	Die Serialisierung hat folgendes Format:
+
+	(sg: Straﬂengeben, sn: Straﬂennehmen)
+
+	sg.length|sg[1]|...|sg[n]|sn.length|sn[1]|...|sn[n]|GefKarten|Geld|ssender
+}
+function TAngebot.toString : string;
+var
+	buf: string;
+	i: integer;
+	len : integer;
+begin
+
+	len := length(strassengeben);
+	buf := inttostr(len);
+	i   := 1;
+
+	while i <= len do
+	begin
+		buf := buf + '|' + inttostr(strassengeben[i]);
+		inc(i);
+	end;
+
+	len := length(strassennehmen);
+	buf := '|' + inttostr(len);
+	i   := 1;
+
+	while i <= len do
+	begin
+		buf := buf + '|' + inttostr(strassennehmen[i]);
+		inc(i);
+	end;
+
+	buf := buf + '|' + inttostr(GefKarten) + '|' + inttostr(Geld) + '|' + inttostr(ssender);
+
+	toString := buf;
+end;
+
+constructor TAngebot.create(from: string);
+begin
+end;
+
+constructor TAngebot.create;
+begin
+setlength(strassengeben,0);
+setlength(strassennehmen,0);
+anzG:=0;
+anzN:=0;
+GefKarten:=0;
+Geld:=0;
+sempf:=0;
+ssender:=0;
+end;
+
+end.

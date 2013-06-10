@@ -1,0 +1,5 @@
+Das Programm wurde so gefixt, dass man zumindest, zusammen mit der Veränderten ClientTesst, das Spiel starten kann.
+Es wurde ein Endzeichen für jeden Netzwerk Payload hinzugefügt, da der Computer die einzelnen Nachrichten zu einer zusammengefügt hat, wenn sie zu schnell aufeinander folgten. Daher wurde in der OnRead in der ClienTest ein Trennalgorythmus eingebaut.
+Außerdem gab es noch einige kleinere Änderungen, wie beispielsweise, das entfernen der -1 in der SendtoClient, da dies zu einem Fehler führte. Denn der erste Spieler hat nämmlich die Id 0, davon noch eins abgezogen, ...
+Auch die ClientServer3.txt wurde geändert (seperater Changelog).
+In der ClientTest wurde eine Klasse Tguivecht hinzugefügt, welche von der TAnimationVirtuell abgeleitet ist. Die Methoden sind alle ohne Inhalt, mit ausnahme der Funktion für den Pfad zum Spielbrett. Dies war nötig um das Testen ohne abstrakte Fehler zu ermöglichen.
